@@ -39,8 +39,8 @@ pub struct OnChainData {
 #[serde(rename_all = "camelCase")]
 pub struct Creator {
     pub address: String,
-    pub share: String,
-    pub verified: bool,
+    pub share: u64,
+    pub verified: Option<bool>,
 }
 
 #[derive(Deserialize, Debug, PartialEq)]
@@ -94,6 +94,7 @@ pub struct Properties {
 #[serde(rename_all = "camelCase")]
 pub struct File {
     pub uri: String,
+    #[serde(rename = "type")]
     pub file_type: String,
 }
 

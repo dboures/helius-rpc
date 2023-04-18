@@ -35,7 +35,7 @@ impl HeliusRpcClient {
     //     let res = client.post(request_url).json(&query).send().await.unwrap();
     // }
 
-    /// Returns token metadata (whether NFT or Fungible) for the given token mint addresses. Calls `https://api.helius.xyz/v0/tokens/metadata`. 
+    /// Returns token metadata (whether NFT or Fungible) for the given token mint addresses. Calls `https://api.helius.xyz/v0/tokens/metadata`.
     /// * `token_mints` - The token mint addresses that you want metadata for.
     pub async fn get_tokens_metadata(
         &self,
