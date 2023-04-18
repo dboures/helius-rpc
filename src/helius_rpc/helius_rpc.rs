@@ -1,11 +1,11 @@
 use reqwest::Client as RestClient;
 use serde_json::Value;
+use solana_client::client_error::Result as ClientResult;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::genesis_config::ClusterType;
 use std::collections::HashMap;
-use solana_client::client_error::Result as ClientResult;
 
-use crate::helius_rpc::structs::TokenMetadata;
+use crate::helius_rpc::structs::{NftMetadata, TokenMetadata};
 
 pub const API_URL_V0: &str = "https://api.helius.xyz/v0";
 pub const API_URL_V1: &str = "https://api.helius.xyz/v1";
@@ -35,6 +35,8 @@ impl HeliusRpcClient {
     //     let res = client.post(request_url).json(&query).send().await.unwrap();
     // }
 
+    /// Returns token metadata (whether NFT or Fungible) for the given token mint addresses. Calls `https://api.helius.xyz/v0/tokens/metadata`. 
+    /// * `token_mints` - The token mint addresses that you want metadata for.
     pub async fn get_tokens_metadata(
         &self,
         token_mints: Vec<String>,
@@ -53,8 +55,29 @@ impl HeliusRpcClient {
             .await?
             .json()
             .await?;
+        Ok(res)
+    }
 
-        println!("{:?}", res);
+    /// Returns NFT metadata for the given token mint addresses. Calls `https://api.helius.xyz/v1/nfts`.
+    /// * `token_mints` - The nft mint addresses that you want metadata for.
+    pub async fn get_nfts_metadata(
+        &self,
+        token_mints: Vec<String>,
+    ) -> ClientResult<Vec<NftMetadata>> {
+        let request_url = format!("{}/nfts?api-key={}", API_URL_V1, self.api_key);
+        let mut body = HashMap::new();
+        body.insert("mints", token_mints);
+
+        let res: Vec<NftMetadata> = self
+            .rest_client
+            .post(request_url)
+            .header("accept", "application/json")
+            .header("Content-Type", "application/json")
+            .json(&body)
+            .send()
+            .await?
+            .json()
+            .await?;
         Ok(res)
     }
 }

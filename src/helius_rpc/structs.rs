@@ -25,7 +25,7 @@ pub struct OnChainMetadata {
 }
 
 #[derive(Deserialize, Debug, PartialEq)]
-#[serde(rename = "data")] 
+#[serde(rename = "data")]
 #[serde(rename_all = "camelCase")]
 pub struct OnChainData {
     pub name: String,
@@ -95,4 +95,24 @@ pub struct Properties {
 pub struct File {
     pub uri: String,
     pub file_type: String,
+}
+
+#[derive(Deserialize, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ActiveListing {
+    pub transaction_signature: String,
+    pub marketplace: String,
+    pub amount: i32,
+    pub seller: String,
+}
+
+#[derive(Deserialize, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct NftMetadata {
+    pub mint: String,
+    pub name: String,
+    pub burned: bool,
+    pub first_verified_creator: String,
+    pub verified_collection_address: String,
+    pub active_listings: Vec<ActiveListing>,
 }
