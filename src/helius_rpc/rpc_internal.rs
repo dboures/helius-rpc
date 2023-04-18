@@ -2,14 +2,15 @@ use std::time::Duration;
 
 use delegate::delegate;
 use serde;
-use serde_json::{Value};
+use serde_json::Value;
 use solana_account_decoder::parse_token::{UiTokenAccount, UiTokenAmount};
 #[allow(deprecated)]
 use solana_client::{
     client_error::Result as ClientResult,
-    nonblocking::{rpc_client::RpcClient},
+    nonblocking::rpc_client::RpcClient,
     rpc_client::{
-        GetConfirmedSignaturesForAddress2Config, SerializableMessage, SerializableTransaction, RpcClientConfig, Mocks,
+        GetConfirmedSignaturesForAddress2Config, Mocks, RpcClientConfig, SerializableMessage,
+        SerializableTransaction,
     },
     rpc_config::{
         RpcAccountInfoConfig, RpcBlockConfig, RpcBlockProductionConfig, RpcGetVoteAccountsConfig,
@@ -20,11 +21,11 @@ use solana_client::{
     rpc_deprecated_config::{RpcConfirmedBlockConfig, RpcConfirmedTransactionConfig},
     rpc_request::{RpcRequest, TokenAccountsFilter},
     rpc_response::{
-        Fees, RpcAccountBalance, RpcBlockProduction,
-        RpcConfirmedTransactionStatusWithSignature, RpcContactInfo, RpcInflationGovernor,
-        RpcInflationRate, RpcInflationReward, RpcKeyedAccount, RpcLeaderSchedule, RpcPerfSample,
-        RpcPrioritizationFee, RpcResult, RpcSimulateTransactionResult, RpcSnapshotSlotInfo,
-        RpcStakeActivation, RpcSupply, RpcVersionInfo, RpcVoteAccountStatus,
+        Fees, RpcAccountBalance, RpcBlockProduction, RpcConfirmedTransactionStatusWithSignature,
+        RpcContactInfo, RpcInflationGovernor, RpcInflationRate, RpcInflationReward,
+        RpcKeyedAccount, RpcLeaderSchedule, RpcPerfSample, RpcPrioritizationFee, RpcResult,
+        RpcSimulateTransactionResult, RpcSnapshotSlotInfo, RpcStakeActivation, RpcSupply,
+        RpcVersionInfo, RpcVoteAccountStatus,
     },
     rpc_sender::{RpcSender, RpcTransportStats},
 };
@@ -35,83 +36,83 @@ use solana_program::{
     hash::Hash,
 };
 use solana_sdk::{
-    account::Account, commitment_config::CommitmentConfig, epoch_info::EpochInfo, pubkey::Pubkey,
-    signature::Signature, slot_history::Slot, stake_history::Epoch, transaction,
+    account::Account, commitment_config::CommitmentConfig, epoch_info::EpochInfo,
+    genesis_config::ClusterType, pubkey::Pubkey, signature::Signature, slot_history::Slot,
+    stake_history::Epoch, transaction,
 };
 use solana_transaction_status::{
     EncodedConfirmedBlock, EncodedConfirmedTransactionWithStatusMeta, TransactionStatus,
     UiConfirmedBlock, UiTransactionEncoding,
 };
 
-use super::helius_rpc::HeliusRpcClient;
+use super::helius_rpc::{HeliusRpcClient, DEVNET_RPC_URL, MAINNET_RPC_URL};
 
 #[allow(deprecated)]
 impl HeliusRpcClient {
-
-    pub fn new_sender<T: RpcSender + Send + Sync + 'static>(
-        sender: T,
-        config: RpcClientConfig,
-    ) -> Self {
-        HeliusRpcClient {
-            rpc_client: RpcClient::new_sender(sender, config),
-        }
-    }
-
-    pub fn new(url: String) -> Self {
+    pub fn new(api_key: String, cluster_type: ClusterType) -> Self {
+        let url = match cluster_type {
+            ClusterType::Testnet => panic!("Testnet cluster not supported"),
+            ClusterType::MainnetBeta => format!("{}{}", MAINNET_RPC_URL, api_key),
+            ClusterType::Devnet => format!("{}{}", DEVNET_RPC_URL, api_key),
+            ClusterType::Development => panic!("Local cluster not supported"), // TODO
+        };
         HeliusRpcClient {
             rpc_client: RpcClient::new(url),
+            cluster: cluster_type,
+            api_key,
+            rest_client: reqwest::Client::new(),
         }
     }
 
-    pub fn new_with_commitment(url: String, commitment_config: CommitmentConfig) -> Self {
-        HeliusRpcClient {
-            rpc_client: RpcClient::new_with_commitment(url, commitment_config),
-        }
-    }
+    // pub fn new_with_commitment(url: String, commitment_config: CommitmentConfig) -> Self {
+    //     HeliusRpcClient {
+    //         rpc_client: RpcClient::new_with_commitment(url, commitment_config),
+    //     }
+    // }
 
-    pub fn new_with_timeout(url: String, timeout: Duration) -> Self {
-        HeliusRpcClient {
-            rpc_client: RpcClient::new_with_timeout(url, timeout),
-        }
-    }
+    // pub fn new_with_timeout(url: String, timeout: Duration) -> Self {
+    //     HeliusRpcClient {
+    //         rpc_client: RpcClient::new_with_timeout(url, timeout),
+    //     }
+    // }
 
-    pub fn new_with_timeout_and_commitment(
-        url: String,
-        timeout: Duration,
-        commitment_config: CommitmentConfig,
-    ) -> Self {
-        HeliusRpcClient {
-            rpc_client: RpcClient::new_with_timeout_and_commitment(url, timeout, commitment_config),
-        }
-    }
+    // pub fn new_with_timeout_and_commitment(
+    //     url: String,
+    //     timeout: Duration,
+    //     commitment_config: CommitmentConfig,
+    // ) -> Self {
+    //     HeliusRpcClient {
+    //         rpc_client: RpcClient::new_with_timeout_and_commitment(url, timeout, commitment_config),
+    //     }
+    // }
 
-    pub fn new_with_timeouts_and_commitment(
-        url: String,
-        timeout: Duration,
-        commitment_config: CommitmentConfig,
-        confirm_transaction_initial_timeout: Duration,
-    ) -> Self {
-        HeliusRpcClient {
-            rpc_client: RpcClient::new_with_timeouts_and_commitment(
-                url,
-                timeout,
-                commitment_config,
-                confirm_transaction_initial_timeout,
-            ),
-        }
-    }
+    // pub fn new_with_timeouts_and_commitment(
+    //     url: String,
+    //     timeout: Duration,
+    //     commitment_config: CommitmentConfig,
+    //     confirm_transaction_initial_timeout: Duration,
+    // ) -> Self {
+    //     HeliusRpcClient {
+    //         rpc_client: RpcClient::new_with_timeouts_and_commitment(
+    //             url,
+    //             timeout,
+    //             commitment_config,
+    //             confirm_transaction_initial_timeout,
+    //         ),
+    //     }
+    // }
 
-    pub fn new_mock(url: String) -> Self {
-        HeliusRpcClient {
-            rpc_client: RpcClient::new_mock(url),
-        }
-    }
+    // pub fn new_mock(url: String) -> Self {
+    //     HeliusRpcClient {
+    //         rpc_client: RpcClient::new_mock(url),
+    //     }
+    // }
 
-    pub fn new_mock_with_mocks(url: String, mocks: Mocks) -> Self {
-        HeliusRpcClient {
-            rpc_client: RpcClient::new_mock_with_mocks(url, mocks),
-        }
-    }
+    // pub fn new_mock_with_mocks(url: String, mocks: Mocks) -> Self {
+    //     HeliusRpcClient {
+    //         rpc_client: RpcClient::new_mock_with_mocks(url, mocks),
+    //     }
+    // }
 
     delegate! {
         to self.rpc_client {
