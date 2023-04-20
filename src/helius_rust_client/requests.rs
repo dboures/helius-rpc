@@ -6,7 +6,7 @@ use solana_transaction_status::{UiTransaction, UiTransactionStatusMeta};
 
 use std::collections::HashMap;
 
-use crate::models::{nft::NftMetadata, addresses::{TokenBalancesResponse, NftResponse, DomainNames}, structs::TokenMetadata, transactions::GetRawTransactionsRequestConfig};
+use crate::models::{nft::{NftMetadata, NftEvent}, addresses::{TokenBalancesResponse, NftResponse, DomainNames}, structs::TokenMetadata, transactions::{GetRawTransactionsRequestConfig, RequestConfig}};
 
 use super::{
     helius_rust_client::{ API_URL_V1},
@@ -112,6 +112,26 @@ impl HeliusClient {
             .await?
             .json()
             .await?;
+        Ok(res)
+    }
+
+    pub async fn get_nft_events(&self, config: RequestConfig) -> ClientResult<Vec<NftEvent>> {
+        let query = config.generate_query_parameters(self.api_key.clone())?;
+        let request_url = format!(
+            "{}/addresses/{}/nft-events?",
+            API_URL_V0,
+            config.address.to_string(),
+        );
+
+        let res: Vec<NftEvent> = self
+            .http_client
+            .get(request_url)
+            .query(&query)
+            .send()
+            .await?
+            .json()
+            .await?;
+
         Ok(res)
     }
 

@@ -24,40 +24,21 @@ impl GetRawTransactionsRequestConfig {
         &self,
         api_key: String,
     ) -> ClientResult<Vec<(String, String)>> {
-        let mut query_params = vec![
-            ("address".to_string(), self.address.to_string()),
-            ("api-key".to_string(), api_key),
-        ];
-        if self.before.is_some() {
-            query_params.push(("before".to_string(), self.before.unwrap().to_string()));
-        }
-        if self.until.is_some() {
-            query_params.push(("until".to_string(), self.until.unwrap().to_string()));
-        }
-        if self.limit.is_some() {
-            query_params.push(("limit".to_string(), self.limit.unwrap().to_string()));
-        }
-
-        match self.commitment {
-            Some(CommitmentLevel::Confirmed) => {
-                query_params.push(("commitment".to_string(), "confirmed".to_string()));
-            }
-            Some(CommitmentLevel::Finalized) => {
-                query_params.push(("commitment".to_string(), "finalized".to_string()));
-            }
-            _ => {
-                return Err(ClientError::from(ClientErrorKind::Custom(
-                    "Only Confirmed and Finalized commitments are supported by this API"
-                        .to_string(),
-                )));
-            }
-        }
-        Ok(query_params)
+        let config = RequestConfig {
+            address: self.address,
+            before: self.before,
+            until: self.until,
+            limit: self.limit,
+            source: None,
+            transaction_type: None,
+            commitment: self.commitment,
+        };
+       config.generate_query_parameters(api_key)
     }
 }
 
 #[derive(Debug, Default)]
-pub struct GetTransactionsRequestConfig {
+pub struct RequestConfig {
     pub address: Pubkey,
     pub before: Option<Signature>,
     pub until: Option<Signature>,
@@ -66,7 +47,7 @@ pub struct GetTransactionsRequestConfig {
     pub transaction_type: Option<TransactionType>,
     pub commitment: Option<CommitmentLevel>,
 }
-impl GetTransactionsRequestConfig {
+impl RequestConfig {
     pub fn generate_query_parameters(
         &self,
         api_key: String,
@@ -197,7 +178,7 @@ pub struct UiTransactionStatusMeta {
     pub compute_units_consumed: OptionSerializer<u64>,
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Deserialize, Copy, Clone)]
 #[allow(non_camel_case_types)]
 pub enum TransactionType {
     UNKNOWN,
@@ -304,7 +285,7 @@ impl fmt::Display for TransactionType {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Deserialize, Copy, Clone)]
 #[allow(non_camel_case_types)]
 pub enum TransactionSource {
     FORM_FUNCTION,
@@ -397,4 +378,45 @@ impl fmt::Display for TransactionSource {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self)
     }
+}
+
+
+#[derive(Debug, Deserialize, Copy, Clone, PartialEq)]
+#[allow(non_camel_case_types)]
+pub enum NftEventType {
+    NFT_BID,
+    NFT_BID_CANCELLED,
+    NFT_GLOBAL_BID,
+    NFT_GLOBAL_BID_CANCELLED,
+    NFT_LISTING,
+    NFT_CANCEL_LISTING,
+    NFT_SALE,
+    NFT_MINT,
+    NFT_MINT_REJECTED,
+    NFT_AUCTION_CREATED,
+    NFT_AUCTION_UPDATED,
+    NFT_AUCTION_CANCELLED,
+    NFT_PARTICIPATION_REWARD,
+    BURN_NFT,
+    NFT_RENT_LISTING,
+    NFT_RENT_CANCEL_LISTING,
+    NFT_RENT_UPDATE_LISTING,
+    NFT_RENT_ACTIVATE,
+    NFT_RENT_END,
+    ATTACH_METADATA,
+    REQUEST_PNFT_MIGRATION,
+    START_PNFT_MIGRATION,
+    MIGRATE_TO_PNFT,
+    SFT_MINT
+}
+
+
+#[derive(Debug, Deserialize, Copy, Clone, PartialEq)]
+pub enum TokenStandard {
+    ProgrammableNonFungible,
+    NonFungible,
+    Fungible,
+    FungibleAsset,
+    NonFungibleEdition,
+    UnknownStandard,
 }
