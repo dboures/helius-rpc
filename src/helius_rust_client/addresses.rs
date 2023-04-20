@@ -1,4 +1,4 @@
-use super::helius_rpc::{HeliusRpcClient, API_URL_V0};
+use super::helius_rust_client::{HeliusClient, API_URL_V0};
 use serde::Deserialize;
 use solana_client::client_error::Result as ClientResult;
 use solana_program::{clock::UnixTimestamp, slot_history::Slot};
@@ -43,7 +43,6 @@ pub struct Trait {
     pub value: String,
 }
 
-
 #[derive(Deserialize, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct TokenBalance {
@@ -62,7 +61,7 @@ pub struct HeliusTxn {
     pub meta: Option<UiTransactionStatusMeta>,
 }
 
-impl HeliusRpcClient {
+impl HeliusClient {
     /// Returns the Solana Naming Service name for a given address. Calls `https://api.helius.xyz/v0/addresses/{address}/names`.
     /// * `address` - The addresses that you want names for.
     pub async fn get_naming_service_names(&self, address: String) -> ClientResult<Vec<String>> {
@@ -72,7 +71,7 @@ impl HeliusRpcClient {
         );
 
         let res: DomainNames = self
-            .rest_client
+            .http_client
             .get(request_url)
             .header("accept", "application/json")
             .header("Content-Type", "application/json")
@@ -92,7 +91,7 @@ impl HeliusRpcClient {
         );
 
         let res: TokenBalancesResponse = self
-            .rest_client
+            .http_client
             .get(request_url)
             .header("accept", "application/json")
             .header("Content-Type", "application/json")
@@ -105,7 +104,11 @@ impl HeliusRpcClient {
 
     /// Returns the NFTs held for a given address. Calls `https://api.helius.xyz/v0/addresses/{address}/nfts`.
     /// * `address` - The addresses that you want nfts for.
-    pub async fn get_nfts(&self, address: String, page_number: Option<usize>) -> ClientResult<NftResponse>  {
+    pub async fn get_nfts(
+        &self,
+        address: String,
+        page_number: Option<usize>,
+    ) -> ClientResult<NftResponse> {
         let mut request_url = format!(
             "{}/addresses/{}/nfts?api-key={}",
             API_URL_V0, address, self.api_key
@@ -116,14 +119,16 @@ impl HeliusRpcClient {
         }
 
         let res: NftResponse = self
-            .rest_client
+            .http_client
             .get(request_url)
             .header("accept", "application/json")
             .header("Content-Type", "application/json")
             .send()
-            .await.unwrap()
+            .await
+            .unwrap()
             .json()
-            .await.unwrap();
+            .await
+            .unwrap();
         Ok(res)
     }
 }
