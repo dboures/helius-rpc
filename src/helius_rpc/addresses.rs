@@ -19,6 +19,33 @@ pub struct TokenBalancesResponse {
 
 #[derive(Deserialize, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
+pub struct NftResponse {
+    pub number_of_pages: usize,
+    pub nfts: NftInfo,
+}
+
+#[derive(Deserialize, Debug, PartialEq)]
+#[serde(rename = "nft")]
+#[serde(rename_all = "camelCase")]
+pub struct NftInfo {
+    pub name: String,
+    pub token_address: String,
+    pub collection_address: String,
+    pub collection_name: String,
+    pub image_url: String,
+    pub traits: Vec<Trait>,
+}
+
+#[derive(Deserialize, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct Trait {
+    pub trait_type: String,
+    pub value: String,
+}
+
+
+#[derive(Deserialize, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
 pub struct TokenBalance {
     pub token_account: String,
     pub mint: String,
@@ -73,6 +100,30 @@ impl HeliusRpcClient {
             .await?
             .json()
             .await?;
+        Ok(res)
+    }
+
+    /// Returns the NFTs held for a given address. Calls `https://api.helius.xyz/v0/addresses/{address}/nfts`.
+    /// * `address` - The addresses that you want nfts for.
+    pub async fn get_nfts(&self, address: String, page_number: Option<usize>) -> ClientResult<NftResponse>  {
+        let mut request_url = format!(
+            "{}/addresses/{}/nfts?api-key={}",
+            API_URL_V0, address, self.api_key
+        );
+
+        if page_number.is_some() {
+            request_url = format!("{}&pageNumber={}", request_url, page_number.unwrap());
+        }
+
+        let res: NftResponse = self
+            .rest_client
+            .get(request_url)
+            .header("accept", "application/json")
+            .header("Content-Type", "application/json")
+            .send()
+            .await.unwrap()
+            .json()
+            .await.unwrap();
         Ok(res)
     }
 }
