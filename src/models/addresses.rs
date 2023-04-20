@@ -2,7 +2,9 @@ use serde::Deserialize;
 use solana_program::{clock::UnixTimestamp, slot_history::Slot};
 use solana_transaction_status::UiTransaction;
 
-use super::transactions::UiTransactionStatusMeta;
+use super::{transactions::UiTransactionStatusMeta, nft::MintListResult};
+
+// TODO: rename file responses?
 
 #[derive(Deserialize, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -15,6 +17,13 @@ pub struct DomainNames {
 pub struct TokenBalancesResponse {
     pub native_balance: u64,
     pub tokens: Vec<TokenBalance>,
+}
+
+#[derive(Deserialize, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct MintListResponse {
+    pub result: Vec<MintListResult>,
+    pub pagination_token: String,
 }
 
 #[derive(Deserialize, Debug, PartialEq)]

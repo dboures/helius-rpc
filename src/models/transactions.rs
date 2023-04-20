@@ -1,6 +1,7 @@
-use std::fmt::{self, Display};
+use std::{fmt::{self, Display}, collections::HashMap};
 
 use serde::Deserialize;
+use serde_json::json;
 use solana_client::client_error::{ClientError, ClientErrorKind, Result as ClientResult};
 use solana_program::pubkey::Pubkey;
 use solana_sdk::{
@@ -90,6 +91,49 @@ impl RequestConfig {
             }
         }
         Ok(query_params)
+    }
+}
+
+
+#[derive(Debug, Default)]
+pub struct MintListRequestConfig {
+    pub verified_collection_addresses: Option<Vec<String>>,
+    pub first_verified_creators: Option<Vec<String>>,
+    pub limit: Option<usize>,
+    pub pagination_token: Option<String>,
+}
+impl MintListRequestConfig {
+    pub fn generate_request_body(
+        self
+    ) -> ClientResult<serde_json::Value> {
+        if self.verified_collection_addresses.is_some() && self.first_verified_creators.is_some() {
+            return Err(ClientError::from(ClientErrorKind::Custom(
+                "Only Confirmed and Finalized commitments are supported by this API"
+                    .to_string(),
+            )));
+        }
+
+        if self.verified_collection_addresses.is_some() {
+            Ok(json!({
+                "query" : {
+                    "verifiedCollectionAddresses": self.verified_collection_addresses.unwrap(),
+                },
+                "options": {
+                    "limit": self.limit,
+                    "paginationToken": self.pagination_token
+                }
+            }))
+        } else {
+            Ok(json!({
+                "query": {
+                    "firstVerifiedCreators": self.first_verified_creators.unwrap(),
+                },
+                "options": {
+                    "limit": self.limit,
+                    "paginationToken": self.pagination_token
+                }
+            }))
+        }
     }
 }
 

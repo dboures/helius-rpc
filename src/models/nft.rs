@@ -46,3 +46,10 @@ pub struct NftToken {
     pub mint: String,
     pub token_standard: TokenStandard
 }
+
+#[derive(Deserialize, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct MintListResult {
+    pub mint: String,
+    pub name: String
+}

@@ -1,12 +1,13 @@
 use super::helius_rust_client::{HeliusClient, API_URL_V0};
+use reqwest::Client;
 use serde::Deserialize;
-use solana_client::client_error::Result as ClientResult;
+use solana_client::client_error::{Result as ClientResult, ClientError};
 use solana_program::{clock::UnixTimestamp, slot_history::Slot};
 use solana_transaction_status::{UiTransaction, UiTransactionStatusMeta};
 
 use std::collections::HashMap;
 
-use crate::models::{nft::{NftMetadata, NftEvent}, addresses::{TokenBalancesResponse, NftResponse, DomainNames}, structs::TokenMetadata, transactions::{GetRawTransactionsRequestConfig, RequestConfig}};
+use crate::models::{nft::{NftMetadata, NftEvent}, addresses::{TokenBalancesResponse, NftResponse, DomainNames, MintListResponse}, structs::TokenMetadata, transactions::{GetRawTransactionsRequestConfig, RequestConfig, MintListRequestConfig}};
 
 use super::{
     helius_rust_client::{ API_URL_V1},
@@ -115,6 +116,8 @@ impl HeliusClient {
         Ok(res)
     }
 
+    /// Returns all NFT related events associated with the given address. Calls `https://api.helius.xyz/v0/addresses/{address}/nft-events`.
+    /// * `config` - The [`RequestConfig`](crate::models::transactions::RequestConfig).
     pub async fn get_nft_events(&self, config: RequestConfig) -> ClientResult<Vec<NftEvent>> {
         let query = config.generate_query_parameters(self.api_key.clone())?;
         let request_url = format!(
@@ -132,6 +135,25 @@ impl HeliusClient {
             .json()
             .await?;
 
+        Ok(res)
+    }
+
+    /// Returns a list of mint accounts for a given NFT collection. Calls `https://api.helius.xyz/v1/mintlist`.
+    /// * `config` - The [`MintListRequestConfig`](crate::models::transactions::MintListRequestConfig).
+    pub async fn get_mint_list(&self, config: MintListRequestConfig) -> ClientResult<MintListResponse> {
+        let request_url = format!("{}/mintlist?api-key={}", API_URL_V1, self.api_key);
+
+        let body = config.generate_request_body()?;
+        let res: MintListResponse = self
+            .http_client
+            .post(request_url)
+            .header("accept", "application/json")
+            .header("Content-Type", "application/json")
+            .json(&body)
+            .send()
+            .await?
+            .json()
+            .await?;
         Ok(res)
     }
 
@@ -159,7 +181,7 @@ impl HeliusClient {
     }
 
     /// Returns raw transaction history for a given address. Calls `https://api.helius.xyz/v0/addresses/{address}/raw-transactions`.
-    /// * `address` - The address that you want transactions for.
+    /// * `config` - The [`RequestConfig`](crate::models::transactions::RequestConfig).
     pub async fn get_raw_transactions(
         &self,
         config: GetRawTransactionsRequestConfig,
