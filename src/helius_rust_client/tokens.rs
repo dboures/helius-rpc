@@ -1,17 +1,21 @@
 use super::helius_rust_client::{HeliusClient, API_URL_V0};
 use reqwest::Client;
 use serde::Deserialize;
-use solana_client::client_error::{Result as ClientResult, ClientError};
+use solana_client::client_error::{ClientError, ClientErrorKind, Result as ClientResult};
 use solana_program::{clock::UnixTimestamp, slot_history::Slot};
+use solana_sdk::commitment_config::CommitmentLevel;
 use solana_transaction_status::{UiTransaction, UiTransactionStatusMeta};
 
 use std::collections::HashMap;
 
-use crate::models::{nft::{NftMetadata, NftEvent}, addresses::{TokenBalancesResponse, NftResponse, DomainNames, MintListResponse}, structs::TokenMetadata, transactions::{GetRawTransactionsRequestConfig, RequestConfig, MintListRequestConfig}};
-
-use super::{
-    helius_rust_client::{ API_URL_V1},
+use crate::models::{
+    addresses::{MintListResponse, NftResponse, TokenBalancesResponse},
+    nft::{NftEvent, NftMetadata},
+    structs::TokenMetadata,
+    transactions::{MintListRequestConfig, RequestConfig},
 };
+
+use super::helius_rust_client::API_URL_V1;
 
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -23,25 +27,6 @@ pub struct HeliusTxn {
 }
 
 impl HeliusClient {
-    /// Returns the Solana Naming Service name for a given address. Calls `https://api.helius.xyz/v0/addresses/{address}/names`.
-    /// * `address` - The addresses that you want names for.
-    pub async fn get_naming_service_names(&self, address: String) -> ClientResult<Vec<String>> {
-        let request_url = format!(
-            "{}/addresses/{}/names?api-key={}",
-            API_URL_V0, address, self.api_key
-        );
-
-        let res: DomainNames = self
-            .http_client
-            .get(request_url)
-            .header("accept", "application/json")
-            .header("Content-Type", "application/json")
-            .send()
-            .await?
-            .json()
-            .await?;
-        Ok(res.domain_names)
-    }
 
     /// Returns the native balance and token balances for a given address. Calls `https://api.helius.xyz/v0/addresses/{address}/balances`.
     /// * `address` - The addresses that you want token balances for.
@@ -140,7 +125,10 @@ impl HeliusClient {
 
     /// Returns a list of mint accounts for a given NFT collection. Calls `https://api.helius.xyz/v1/mintlist`.
     /// * `config` - The [`MintListRequestConfig`](crate::models::transactions::MintListRequestConfig).
-    pub async fn get_mint_list(&self, config: MintListRequestConfig) -> ClientResult<MintListResponse> {
+    pub async fn get_mint_list(
+        &self,
+        config: MintListRequestConfig,
+    ) -> ClientResult<MintListResponse> {
         let request_url = format!("{}/mintlist?api-key={}", API_URL_V1, self.api_key);
 
         let body = config.generate_request_body()?;
@@ -179,57 +167,5 @@ impl HeliusClient {
             .await?;
         Ok(res)
     }
-
-    /// Returns raw transaction history for a given address. Calls `https://api.helius.xyz/v0/addresses/{address}/raw-transactions`.
-    /// * `config` - The [`RequestConfig`](crate::models::transactions::RequestConfig).
-    pub async fn get_raw_transactions(
-        &self,
-        config: GetRawTransactionsRequestConfig,
-    ) -> ClientResult<Vec<HeliusTxn>> {
-        let query = config.generate_query_parameters(self.api_key.clone())?;
-        let request_url = format!(
-            "{}/addresses/{}/raw-transactions?",
-            API_URL_V0,
-            config.address.to_string(),
-        );
-
-        let res: Vec<HeliusTxn> = self
-            .http_client
-            .get(request_url)
-            .query(&query)
-            .send()
-            .await?
-            .json()
-            .await?;
-
-        Ok(res)
-    }
-
-    // // TODO
-
-    // /// Returns enriched transaction history for a given address. Calls `https://api.helius.xyz/v0/addresses/{address}/transactions`.
-    // /// * `address` - The address that you want transactions for.
-    // pub async fn get_transactions(
-    //     &self,
-    //     config: GetTransactionsRequestConfig,
-    // ) -> ClientResult<Vec<HeliusTxn>> {
-    //         let query = config.generate_query_parameters(self.api_key.clone())?;
-    //         let request_url = format!(
-    //             "{}/addresses/{}/transactions?",
-    //             API_URL_V0, config.address.to_string(),
-    //         );
-
-    //         let res: serde_json::Value = self
-    //             .http_client
-    //             .get(request_url)
-    //             .query(&query)
-    //             .send()
-    //             .await?
-    //             .json()
-    //             .await?;
-
-    //         println!("{:?}", res);
-    //         Ok(vec![])
-    // }
 
 }

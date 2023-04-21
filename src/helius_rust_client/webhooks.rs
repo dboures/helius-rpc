@@ -1,7 +1,6 @@
 use crate::models::transactions::TransactionType;
 
-use super::helius_rust_client::{HeliusClient, API_URL_V0};
-use reqwest::{Error as ReqwestError, Response, StatusCode};
+use super::{helius_rust_client::{HeliusClient, API_URL_V0}, parse_response};
 use serde::{Deserialize, Serialize};
 use solana_client::client_error::{ClientError, ClientErrorKind, Result as ClientResult};
 
@@ -39,21 +38,6 @@ pub enum WebhookType {
     rawDevnet,
     discord,
     discordDevnet,
-}
-
-pub async fn parse_response<T: for<'a> Deserialize<'a>>(
-    response: Result<Response, ReqwestError>,
-) -> ClientResult<T> {
-    match response {
-        Ok(res) => {
-            let payload = res.json().await; // could be `Error` or `Response` but only parses to `Response`
-            match payload {
-                Ok(j) => Ok(j),
-                Err(e) => Err(ClientError::from(ClientErrorKind::Reqwest(e))),
-            }
-        }
-        Err(e) => Err(ClientError::from(ClientErrorKind::Reqwest(e))),
-    }
 }
 
 impl HeliusClient {
