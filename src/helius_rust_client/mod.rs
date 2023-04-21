@@ -23,3 +23,10 @@ pub async fn parse_response<T: for<'a> Deserialize<'a>>(
         Err(e) => Err(ClientError::from(ClientErrorKind::Reqwest(e))),
     }
 }
+
+pub fn api_commitment_error<T>() -> ClientResult<T> {
+    Err(ClientError::from(ClientErrorKind::Custom(
+        "Only Confirmed and Finalized commitments are supported by this API"
+            .to_string(),
+    )))
+}

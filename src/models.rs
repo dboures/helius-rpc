@@ -1,4 +1,5 @@
 pub mod nft;
-pub mod transactions;
-pub mod addresses;
 pub mod structs;
+pub mod raw_transaction;
+pub mod enriched_transaction;
+pub mod enums;

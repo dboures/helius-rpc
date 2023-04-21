@@ -1,3 +1,5 @@
+use crate::models::{nft::{TokenBalancesResponse, NftResponse, NftMetadata, MintListResponse, MintListRequestConfig, NftEvent}, enriched_transaction::RequestConfig, structs::TokenMetadata};
+
 use super::helius_rust_client::{HeliusClient, API_URL_V0};
 use reqwest::Client;
 use serde::Deserialize;
@@ -8,12 +10,6 @@ use solana_transaction_status::{UiTransaction, UiTransactionStatusMeta};
 
 use std::collections::HashMap;
 
-use crate::models::{
-    addresses::{MintListResponse, NftResponse, TokenBalancesResponse},
-    nft::{NftEvent, NftMetadata},
-    structs::TokenMetadata,
-    transactions::{MintListRequestConfig, RequestConfig},
-};
 
 use super::helius_rust_client::API_URL_V1;
 
