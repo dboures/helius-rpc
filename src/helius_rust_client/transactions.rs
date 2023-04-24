@@ -5,7 +5,7 @@ use solana_sdk::commitment_config::CommitmentLevel;
 use std::collections::HashMap;
 
 use crate::{models::{
-    raw_transaction::{GetRawTransactionsRequestConfig, RawTransaction},
+    raw_transaction::{GetRawTransactionsRequestConfig, RawTransaction}, enriched_transaction::{EnrichedTransaction, RequestConfig},
 }, helius_rust_client::api_commitment_error};
 
 
@@ -41,26 +41,13 @@ impl HeliusClient {
         transaction_hashes: Vec<String>,
         commitment: Option<CommitmentLevel>
     ) -> ClientResult<Vec<RawTransaction>> {
-        let mut request_url = format!(
+        let request_url = format!(
             "{}/raw-transactions?api-key={}",
             API_URL_V0,
             self.api_key,
         );
 
-        match commitment {
-            Some(CommitmentLevel::Confirmed) => {
-                request_url.push_str("&commitment=confirmed");
-            }
-            Some(CommitmentLevel::Finalized) => {
-                request_url.push_str("&commitment=finalized");
-            },
-            None => {
-                request_url.push_str("&commitment=finalized");
-            }
-            _ => {
-                return api_commitment_error()
-            }
-        }
+        let request_url = attach_commitment(request_url, commitment)?;
         let mut body = HashMap::new();
         body.insert("transactions", transaction_hashes);
 
@@ -76,80 +63,76 @@ impl HeliusClient {
         parse_response(response).await
     }
 
-    // // TODO
+    /// Returns enriched transaction history for a given address. Calls `https://api.helius.xyz/v0/addresses/{address}/transactions`.
+    /// * `address` - The address that you want transactions for.
+    pub async fn get_enriched_transactions(
+        &self,
+        config: RequestConfig,
+    ) -> ClientResult<Vec<EnrichedTransaction>> {
+            let query = config.generate_query_parameters(self.api_key.clone())?;
+            let request_url = format!(
+                "{}/addresses/{}/transactions?",
+                API_URL_V0, config.address.to_string(),
+            );
+            let request_url = attach_commitment(request_url, config.commitment)?;
 
-    // /// Returns enriched transaction history for a given address. Calls `https://api.helius.xyz/v0/addresses/{address}/transactions`.
-    // /// * `address` - The address that you want transactions for.
-    // pub async fn get_enriched_transactions(
-    //     &self,
-    //     config: GetTransactionsRequestConfig,
-    // ) -> ClientResult<Vec<HeliusTxn>> {
-    //         let query = config.generate_query_parameters(self.api_key.clone())?;
-    //         let request_url = format!(
-    //             "{}/addresses/{}/transactions?",
-    //             API_URL_V0, config.address.to_string(),
-    //         );
+            let response = self
+                .http_client
+                .get(request_url)
+                .query(&query)
+                .send()
+                .await;
 
-    //         let res: serde_json::Value = self
-    //             .http_client
-    //             .get(request_url)
-    //             .query(&query)
-    //             .send()
-    //             .await?
-    //             .json()
-    //             .await?;
+            parse_response(response).await
+    }
 
-    //         println!("{:?}", res);
-    //         Ok(vec![])
-    // }
+    /// Returns enriched transaction information for the given transaction hashes. Calls `https://api.helius.xyz/v0/transactions`.
+    /// * `transaction_hashes` - The transaction hashes as Strings.
+    /// * `commitment` - an Option containing the [`CommitmentLevel`]. Default is finalized.
+    pub async fn get_enriched_transactions_by_hash(
+        &self,
+        transaction_hashes: Vec<String>,
+        commitment: Option<CommitmentLevel>
+    ) -> ClientResult<Vec<EnrichedTransaction>> {
+        let request_url = format!(
+            "{}/transactions/?api-key={}",
+            API_URL_V0,
+            self.api_key,
+        );
 
-    // /// Returns enriched transaction information for the given transaction hashes. Calls `https://api.helius.xyz/v0/transactions`.
-    // /// * `transaction_hashes` - The transaction hashes as Strings.
-    // /// * `commitment` - an Option containing the [`CommitmentLevel`]. Default is finalized.
-    // pub async fn get_enriched_transactions_by_hash(
-    //     &self,
-    //     transaction_hashes: Vec<String>,
-    //     commitment: Option<CommitmentLevel>
-    // ) -> ClientResult<Vec<HeliusTxn>> {
-    //     let mut request_url = format!(
-    //         "{}/raw-transactions/?api-key={}",
-    //         API_URL_V0,
-    //         self.api_key,
-    //     );
+        let request_url = attach_commitment(request_url, commitment)?;
 
-    //     match commitment {
-    //         Some(CommitmentLevel::Confirmed) => {
-    //             request_url.push_str("&commitment=confirmed");
-    //         }
-    //         Some(CommitmentLevel::Finalized) => {
-    //             request_url.push_str("&commitment=finalized");
-    //         },
-    //         None => {
-    //             request_url.push_str("&commitment=finalized");
-    //         }
-    //         _ => {
-    //             return Err(ClientError::from(ClientErrorKind::Custom(
-    //                 "Only Confirmed and Finalized commitments are supported by this API"
-    //                     .to_string(),
-    //             )));
-    //         }
-    //     }
-    //     let mut body = HashMap::new();
-    //     body.insert("transactions", transaction_hashes);
+        let mut body = HashMap::new();
+        body.insert("transactions", transaction_hashes);
 
-    //     let res: serde_json::Value = self
-    //         .http_client
-    //         .post(request_url)
-    //         .header("accept", "application/json")
-    //         .header("Content-Type", "application/json")
-    //         .json(&body)
-    //         .send()
-    //         .await?
-    //         .json()
-    //         .await?;
+        let response = self
+            .http_client
+            .post(request_url)
+            .header("accept", "application/json")
+            .header("Content-Type", "application/json")
+            .json(&body)
+            .send()
+            .await;
 
-    //     println!("{:?}", res);
+        parse_response(response).await
+    }
+}
 
-    //     Ok(vec![])
-    // }
+
+fn attach_commitment(mut request_url: String, commitment: Option<CommitmentLevel>) -> ClientResult<String> {
+        match commitment {
+            Some(CommitmentLevel::Confirmed) => {
+                request_url.push_str("&commitment=confirmed");
+            }
+            Some(CommitmentLevel::Finalized) => {
+                request_url.push_str("&commitment=finalized");
+            },
+            None => {
+                request_url.push_str("&commitment=finalized");
+            }
+            _ => {
+                return api_commitment_error()
+            }
+        }
+        Ok(request_url)
 }

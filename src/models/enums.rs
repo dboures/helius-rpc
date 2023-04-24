@@ -109,7 +109,7 @@ impl fmt::Display for TransactionType {
     }
 }
 
-#[derive(Debug, Deserialize, Copy, Clone)]
+#[derive(Debug, Deserialize, Copy, Clone, PartialEq)]
 #[allow(non_camel_case_types)]
 pub enum TransactionSource {
     FORM_FUNCTION,
@@ -241,4 +241,17 @@ pub enum TokenStandard {
     FungibleAsset,
     NonFungibleEdition,
     UnknownStandard,
+}
+
+
+#[derive(Debug, Deserialize, Copy, Clone, PartialEq)]
+#[allow(non_camel_case_types)]
+pub enum CompressedNftEventType {
+    COMPRESSED_NFT_MINT, 
+    COMPRESSED_NFT_TRANSFER, 
+    CREATE_MERKLE_TREE, 
+    COMPRESSED_NFT_REDEEM, 
+    COMPRESSED_NFT_CANCEL_REDEEM, 
+    COMPRESSED_NFT_BURN, 
+    COMPRESSED_NFT_DELEGATE 
 }

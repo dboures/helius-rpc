@@ -2,9 +2,9 @@ use serde::Deserialize;
 use serde_json::json;
 
 use crate::helius_rust_client::api_commitment_error;
-use solana_client::client_error::{ClientError, ClientErrorKind, Result as ClientResult};
+use solana_client::client_error::{Result as ClientResult};
 
-use super::enums::{NftEventType, TokenStandard};
+use super::enums::{NftEventType, TokenStandard, CompressedNftEventType};
 
 #[derive(Deserialize, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -26,10 +26,21 @@ pub struct NftMetadata {
     pub active_listings: Vec<ActiveListing>,
 }
 
-#[derive(Deserialize, Debug, PartialEq)]
+#[derive(Deserialize, Debug, PartialEq, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct CompressedNftEvent {
+    event_type: CompressedNftEventType,
+    tree_id: String,
+    asset_id: String,
+    leaf_index: u64,
+    instruction_index: u64,
+    inner_instruction_index: u64,
+}
+
+#[derive(Deserialize, Debug, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct NftEvent {
-    pub amount: i128, // Sometimes has negatives, although it should be lamports , TODO: write a lamport deserializer??
+    pub amount: i128, // Sometimes has negatives, although it should be lamports?
     pub fee: u64,
     pub fee_payer: String,
     pub signature: String,
@@ -43,7 +54,7 @@ pub struct NftEvent {
     pub nfts: Vec<NftToken>,
 }
 
-#[derive(Deserialize, Debug, PartialEq)]
+#[derive(Deserialize, Debug, PartialEq, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct NftToken {
     pub mint: String,

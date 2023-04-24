@@ -6,7 +6,7 @@ use std::{
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use solana_client::client_error::{ClientError, ClientErrorKind, Result as ClientResult};
-use solana_program::pubkey::Pubkey;
+use solana_program::{pubkey::Pubkey, clock::UnixTimestamp, slot_history::Slot};
 use solana_sdk::{
     commitment_config::CommitmentLevel, signature::Signature, transaction::TransactionError,
 };
@@ -15,7 +15,7 @@ use solana_transaction_status::{
     UiTransactionReturnData, UiTransactionTokenBalance,
 };
 
-use super::enums::{TransactionSource, TransactionType};
+use super::{enums::{TransactionSource, TransactionType}, nft::{NftEvent, CompressedNftEvent}};
 
 
 #[derive(Debug, Default)]
@@ -75,87 +75,102 @@ impl RequestConfig {
     }
 }
 
-// #[derive(Clone, Debug, PartialEq, Deserialize)]
-// #[serde(rename_all = "camelCase")]
-// pub struct NativeTransfer {
-//     from_user_account: String,
-//     to_user_account: String,
-//     amount: u64,
-// }
-
-// #[derive(Clone, Debug, PartialEq, Deserialize)]
-// #[serde(rename_all = "camelCase")]
-// pub struct TokenTransfer {
-//     pub from_user_account: String,
-//     pub to_user_account: String,
-//     pub from_token_account: String,
-//     pub to_token_account: String,
-//     pub token_amount: u64,
-//     pub mint: String,
-// }
-
-// #[derive(Clone, Debug, PartialEq, Deserialize)]
-// #[serde(rename_all = "camelCase")]
-// pub struct InnerInstruction {
-//     pub accounts: Vec<String>,
-//     pub data: String,
-//     pub program_id: String,
-// }
-
-// #[derive(Clone, Debug, PartialEq, Deserialize)]
-// #[serde(rename_all = "camelCase")]
-// pub struct Instruction {
-//     pub accounts: Vec<String>,
-//     pub data: String,
-//     pub program_id: String,
-// }
-
-/// A duplicate representation of TransactionStatusMeta with `err` field. Copied from solana-transactions-status crate, but without the status field.
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct UiTransactionStatusMeta {
-    pub err: Option<TransactionError>,
+pub struct EnrichedTransaction {
+    pub description: Option<String>,
+    #[serde(rename = "type")]
+    pub transaction_type: TransactionType,
+    pub source: TransactionSource,
     pub fee: u64,
-    pub pre_balances: Vec<u64>,
-    pub post_balances: Vec<u64>,
-    #[serde(
-        default = "OptionSerializer::none",
-        skip_serializing_if = "OptionSerializer::should_skip"
-    )]
-    pub inner_instructions: OptionSerializer<Vec<UiInnerInstructions>>,
-    #[serde(
-        default = "OptionSerializer::none",
-        skip_serializing_if = "OptionSerializer::should_skip"
-    )]
-    pub log_messages: OptionSerializer<Vec<String>>,
-    #[serde(
-        default = "OptionSerializer::none",
-        skip_serializing_if = "OptionSerializer::should_skip"
-    )]
-    pub pre_token_balances: OptionSerializer<Vec<UiTransactionTokenBalance>>,
-    #[serde(
-        default = "OptionSerializer::none",
-        skip_serializing_if = "OptionSerializer::should_skip"
-    )]
-    pub post_token_balances: OptionSerializer<Vec<UiTransactionTokenBalance>>,
-    #[serde(
-        default = "OptionSerializer::none",
-        skip_serializing_if = "OptionSerializer::should_skip"
-    )]
-    pub rewards: OptionSerializer<Rewards>,
-    #[serde(
-        default = "OptionSerializer::skip",
-        skip_serializing_if = "OptionSerializer::should_skip"
-    )]
-    pub loaded_addresses: OptionSerializer<UiLoadedAddresses>,
-    #[serde(
-        default = "OptionSerializer::skip",
-        skip_serializing_if = "OptionSerializer::should_skip"
-    )]
-    pub return_data: OptionSerializer<UiTransactionReturnData>,
-    #[serde(
-        default = "OptionSerializer::skip",
-        skip_serializing_if = "OptionSerializer::should_skip"
-    )]
-    pub compute_units_consumed: OptionSerializer<u64>,
+    pub fee_payer: String,	
+    pub signature: String,	
+    pub slot: Slot,	
+    pub timestamp: Option<UnixTimestamp>,	
+    pub native_transfers: Vec<NativeTransfer>,	
+    pub token_transfers: Vec<TokenTransfer>,	
+    pub account_data: Vec<EnrichedAccountData>,	
+    pub transaction_error: Option<EnrichedError>,	
+    pub instructions: Vec<EnrichedInstruction>,	
+    pub events: EnrichedEvents,
+}
+
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EnrichedEvents {
+    pub nft: Option<NftEvent>,
+    pub swap: Option<SwapEvent>,
+    pub compressed: Option<CompressedNftEvent>
+}
+
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NativeTransfer {
+    pub from_user_account: String,
+    pub to_user_account: String,
+    pub amount: u64,
+}
+
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct TokenTransfer {
+    pub from_user_account: String,
+    pub to_user_account: String,
+    pub from_token_account: String,
+    pub to_token_account: String,
+    pub token_amount: u64,
+    pub mint: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EnrichedAccountData {
+    pub account: String,
+    pub native_balance_change: i128,
+    pub token_balance_changes: Vec<EnrichedTokenBalanceChange>,
+}
+
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EnrichedInstruction {
+    pub accounts: Vec<String>,
+    pub data: String,
+    pub program_id: String,
+    pub inner_instructions: Vec<EnrichedInnerInstruction>
+}
+
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EnrichedInnerInstruction {
+    pub accounts: Vec<String>,
+    pub data: String,
+    pub program_id: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EnrichedTokenBalanceChange {
+    pub user_account: String,
+    pub token_account: String,
+    pub mint: String,
+    pub raw_token_amount: RawTokenAmount
+}
+
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RawTokenAmount {
+    pub token_amount: String,
+    pub decimals: u8
+}
+
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct EnrichedError {
+    pub error: String
+}
+
+#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SwapEvent {
+    pub error: String
 }
