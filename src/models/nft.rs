@@ -1,17 +1,19 @@
 use serde::Deserialize;
-use serde_json::json;
+use serde_json::{json, Value};
 
-use crate::helius_rust_client::api_commitment_error;
-use solana_client::client_error::{Result as ClientResult};
+use solana_client::client_error::{ClientError, ClientErrorKind, Result as ClientResult};
 
-use super::enums::{NftEventType, TokenStandard, CompressedNftEventType};
+use super::{
+    enriched_transaction::{NativeTransfer, TokenTransfer},
+    enums::{CompressedNftEventType, NftEventType, SaleType, TokenStandard, TransactionSource},
+};
 
 #[derive(Deserialize, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ActiveListing {
     pub transaction_signature: String,
     pub marketplace: String,
-    pub amount: i32,
+    pub amount: u64,
     pub seller: String,
 }
 
@@ -47,11 +49,33 @@ pub struct NftEvent {
     pub slot: u64,
     pub timestamp: u64,
     #[serde(rename = "type")]
-    pub sale_type: NftEventType,
+    pub event_type: NftEventType,
     pub buyer: String,
     pub seller: String,
     pub staker: String,
     pub nfts: Vec<NftToken>,
+}
+
+#[derive(Deserialize, Debug, PartialEq, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct NftEventV2 {
+    #[serde(rename = "type")]
+    pub event_type: NftEventType,
+    pub source: TransactionSource,
+    pub amount: i128, // Sometimes has negatives, although it should be lamports?
+    pub fee: u64,
+    pub fee_payer: String,
+    pub signature: String,
+    pub slot: u64,
+    pub timestamp: u64,
+    pub sale_type: SaleType,
+    pub buyer: String,
+    pub seller: String,
+    pub staker: String,
+    pub nfts: Value,
+    pub native_transfers: Vec<NativeTransfer>,
+    pub token_transfers: Vec<TokenTransfer>,
+    pub pagination_token: Option<String>,
 }
 
 #[derive(Deserialize, Debug, PartialEq, Clone)]
@@ -117,7 +141,6 @@ pub struct TokenBalance {
     pub decimals: u8,
 }
 
-
 #[derive(Debug, Default)]
 pub struct MintListRequestConfig {
     pub verified_collection_addresses: Option<Vec<String>>,
@@ -128,7 +151,7 @@ pub struct MintListRequestConfig {
 impl MintListRequestConfig {
     pub fn generate_request_body(self) -> ClientResult<serde_json::Value> {
         if self.verified_collection_addresses.is_some() && self.first_verified_creators.is_some() {
-            return api_commitment_error();
+            return single_verified_args_error();
         }
 
         if self.verified_collection_addresses.is_some() {
@@ -153,4 +176,68 @@ impl MintListRequestConfig {
             }))
         }
     }
+}
+
+#[derive(Deserialize, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ActiveListingsResponse {
+    pub result: Vec<ListingResult>,
+    pub pagination_token: String,
+}
+
+#[derive(Deserialize, Debug, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub struct ListingResult {
+    pub mint: String,
+    pub name: String,
+    pub first_verified_creator: String,
+    pub verified_collection_address: String,
+    pub active_listings: Vec<ActiveListing>,
+}
+
+#[derive(Debug, Default)]
+pub struct ActiveListingsRequestConfig {
+    pub marketplaces: Vec<String>,
+    pub verified_collection_addresses: Option<Vec<String>>,
+    pub first_verified_creators: Option<Vec<String>>,
+    pub limit: Option<usize>,
+    pub pagination_token: Option<String>,
+}
+impl ActiveListingsRequestConfig {
+    pub fn generate_request_body(self) -> ClientResult<serde_json::Value> {
+        if self.verified_collection_addresses.is_some() && self.first_verified_creators.is_some() {
+            return single_verified_args_error();
+        }
+
+        if self.verified_collection_addresses.is_some() {
+            Ok(json!({
+                "query" : {
+                    "marketplaces": self.marketplaces,
+                    "verifiedCollectionAddresses": self.verified_collection_addresses.unwrap(),
+                },
+                "options": {
+                    "limit": self.limit,
+                    "paginationToken": self.pagination_token
+                }
+            }))
+        } else {
+            Ok(json!({
+                "query": {
+                    "marketplaces": self.marketplaces,
+                    "firstVerifiedCreators": self.first_verified_creators.unwrap(),
+                },
+                "options": {
+                    "limit": self.limit,
+                    "paginationToken": self.pagination_token
+                }
+            }))
+        }
+    }
+}
+
+fn single_verified_args_error<T>() -> ClientResult<T> {
+    Err(ClientError::from(ClientErrorKind::Custom(
+        "API only accepts one of first_verified_creators or verified_collection_addresses"
+            .to_string(),
+    )))
 }

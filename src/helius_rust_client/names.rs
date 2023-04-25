@@ -1,6 +1,9 @@
-use super::{helius_rust_client::{HeliusClient, API_URL_V0}, parse_response};
+use super::{
+    helius_rust_client::{HeliusClient, API_URL_V0},
+    parse_response,
+};
 use serde::Deserialize;
-use solana_client::client_error::{Result as ClientResult};
+use solana_client::client_error::Result as ClientResult;
 
 #[derive(Deserialize, Debug, PartialEq)]
 #[serde(rename_all = "camelCase")]

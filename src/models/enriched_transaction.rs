@@ -1,22 +1,15 @@
-use std::{
-    collections::HashMap,
-    fmt::{self, Display},
-};
-
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use solana_client::client_error::{ClientError, ClientErrorKind, Result as ClientResult};
-use solana_program::{pubkey::Pubkey, clock::UnixTimestamp, slot_history::Slot};
+use solana_program::{clock::UnixTimestamp, pubkey::Pubkey, slot_history::Slot};
 use solana_sdk::{
     commitment_config::CommitmentLevel, signature::Signature, transaction::TransactionError,
 };
-use solana_transaction_status::{
-    option_serializer::OptionSerializer, Rewards, UiInnerInstructions, UiLoadedAddresses,
-    UiTransactionReturnData, UiTransactionTokenBalance,
+
+use super::{
+    enums::{TransactionSource, TransactionType},
+    nft::{CompressedNftEvent, NftEvent},
 };
-
-use super::{enums::{TransactionSource, TransactionType}, nft::{NftEvent, CompressedNftEvent}};
-
 
 #[derive(Debug, Default)]
 pub struct RequestConfig {
@@ -83,15 +76,15 @@ pub struct EnrichedTransaction {
     pub transaction_type: TransactionType,
     pub source: TransactionSource,
     pub fee: u64,
-    pub fee_payer: String,	
-    pub signature: String,	
-    pub slot: Slot,	
-    pub timestamp: Option<UnixTimestamp>,	
-    pub native_transfers: Vec<NativeTransfer>,	
-    pub token_transfers: Vec<TokenTransfer>,	
-    pub account_data: Vec<EnrichedAccountData>,	
-    pub transaction_error: Option<EnrichedError>,	
-    pub instructions: Vec<EnrichedInstruction>,	
+    pub fee_payer: String,
+    pub signature: String,
+    pub slot: Slot,
+    pub timestamp: Option<UnixTimestamp>,
+    pub native_transfers: Vec<NativeTransfer>,
+    pub token_transfers: Vec<TokenTransfer>,
+    pub account_data: Vec<EnrichedAccountData>,
+    pub transaction_error: Option<EnrichedError>,
+    pub instructions: Vec<EnrichedInstruction>,
     pub events: EnrichedEvents,
 }
 
@@ -100,7 +93,7 @@ pub struct EnrichedTransaction {
 pub struct EnrichedEvents {
     pub nft: Option<NftEvent>,
     pub swap: Option<SwapEvent>,
-    pub compressed: Option<CompressedNftEvent>
+    pub compressed: Option<CompressedNftEvent>,
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize)]
@@ -136,7 +129,7 @@ pub struct EnrichedInstruction {
     pub accounts: Vec<String>,
     pub data: String,
     pub program_id: String,
-    pub inner_instructions: Vec<EnrichedInnerInstruction>
+    pub inner_instructions: Vec<EnrichedInnerInstruction>,
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize)]
@@ -153,24 +146,24 @@ pub struct EnrichedTokenBalanceChange {
     pub user_account: String,
     pub token_account: String,
     pub mint: String,
-    pub raw_token_amount: RawTokenAmount
+    pub raw_token_amount: RawTokenAmount,
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct RawTokenAmount {
     pub token_amount: String,
-    pub decimals: u8
+    pub decimals: u8,
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct EnrichedError {
-    pub error: String
+    pub error: String,
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SwapEvent {
-    pub error: String
+    pub error: String,
 }

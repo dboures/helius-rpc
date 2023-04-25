@@ -6,7 +6,7 @@ use std::{
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use solana_client::client_error::{ClientError, ClientErrorKind, Result as ClientResult};
-use solana_program::{pubkey::Pubkey, slot_history::Slot, clock::UnixTimestamp};
+use solana_program::{clock::UnixTimestamp, pubkey::Pubkey, slot_history::Slot};
 use solana_sdk::{
     commitment_config::CommitmentLevel, signature::Signature, transaction::TransactionError,
 };
@@ -15,7 +15,7 @@ use solana_transaction_status::{
     UiTransactionReturnData, UiTransactionTokenBalance,
 };
 
-use super::enriched_transaction::{RequestConfig};
+use super::enriched_transaction::RequestConfig;
 
 #[derive(Clone, Debug, PartialEq, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -25,7 +25,7 @@ pub struct RawTransaction {
     pub transaction: InnerTransaction,
     pub meta: UiTransactionStatusMeta,
     pub version: Option<String>,
-    pub index_within_block: Option<u64>
+    pub index_within_block: Option<u64>,
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize)]
@@ -41,7 +41,7 @@ pub struct InnerTransactionMessage {
     pub account_keys: Vec<String>,
     pub header: Value,
     pub recent_blockhash: String,
-    pub instructions: Vec<InnerInstruction>
+    pub instructions: Vec<InnerInstruction>,
 }
 
 #[derive(Clone, Debug, PartialEq, Deserialize)]
@@ -49,7 +49,7 @@ pub struct InnerTransactionMessage {
 pub struct InnerInstruction {
     pub program_id_index: usize,
     pub accounts: Vec<usize>,
-    pub data: String
+    pub data: String,
 }
 
 #[derive(Debug, Default)]

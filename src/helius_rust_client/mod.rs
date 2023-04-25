@@ -1,13 +1,12 @@
-use reqwest::{Response, Error as ReqwestError};
+use reqwest::{Error as ReqwestError, Response};
 use serde::Deserialize;
 use solana_client::client_error::{ClientError, ClientErrorKind, Result as ClientResult};
 
 pub mod helius_rust_client;
+pub mod names;
+pub mod tokens;
 pub mod transactions;
 pub mod webhooks;
-pub mod tokens;
-pub mod names;
-
 
 pub async fn parse_response<T: for<'a> Deserialize<'a>>(
     response: Result<Response, ReqwestError>,
@@ -26,7 +25,6 @@ pub async fn parse_response<T: for<'a> Deserialize<'a>>(
 
 pub fn api_commitment_error<T>() -> ClientResult<T> {
     Err(ClientError::from(ClientErrorKind::Custom(
-        "Only Confirmed and Finalized commitments are supported by this API"
-            .to_string(),
+        "Only Confirmed and Finalized commitments are supported by this API".to_string(),
     )))
 }

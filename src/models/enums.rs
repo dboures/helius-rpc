@@ -243,15 +243,25 @@ pub enum TokenStandard {
     UnknownStandard,
 }
 
-
 #[derive(Debug, Deserialize, Copy, Clone, PartialEq)]
 #[allow(non_camel_case_types)]
 pub enum CompressedNftEventType {
-    COMPRESSED_NFT_MINT, 
-    COMPRESSED_NFT_TRANSFER, 
-    CREATE_MERKLE_TREE, 
-    COMPRESSED_NFT_REDEEM, 
-    COMPRESSED_NFT_CANCEL_REDEEM, 
-    COMPRESSED_NFT_BURN, 
-    COMPRESSED_NFT_DELEGATE 
+    COMPRESSED_NFT_MINT,
+    COMPRESSED_NFT_TRANSFER,
+    CREATE_MERKLE_TREE,
+    COMPRESSED_NFT_REDEEM,
+    COMPRESSED_NFT_CANCEL_REDEEM,
+    COMPRESSED_NFT_BURN,
+    COMPRESSED_NFT_DELEGATE,
+}
+
+#[derive(Debug, Deserialize, Copy, Clone, PartialEq)]
+#[allow(non_camel_case_types)]
+pub enum SaleType {
+    AUCTION,
+    INSTANT_SALE,
+    OFFER,
+    GLOBAL_OFFER,
+    MINT,
+    UNKNOWN,
 }
