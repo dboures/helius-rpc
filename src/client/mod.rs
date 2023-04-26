@@ -2,7 +2,7 @@ use reqwest::{Error as ReqwestError, Response};
 use serde::Deserialize;
 use solana_client::client_error::{ClientError, ClientErrorKind, Result as ClientResult};
 
-pub mod helius_rust_client;
+pub mod init;
 pub mod names;
 pub mod tokens;
 pub mod transactions;

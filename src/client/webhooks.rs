@@ -1,7 +1,7 @@
 use crate::models::enums::TransactionType;
 
 use super::{
-    helius_rust_client::{HeliusClient, API_URL_V0},
+    init::{HeliusClient, API_URL_V0},
     parse_response,
 };
 use serde::{Deserialize, Serialize};

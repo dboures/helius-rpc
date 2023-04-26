@@ -1,4 +1,2 @@
-pub mod helius_rust_client;
+pub mod client;
 pub mod models;
-
-

@@ -8,14 +8,14 @@ use crate::models::{
 };
 
 use super::{
-    helius_rust_client::{HeliusClient, API_URL_V0},
+    init::{HeliusClient, API_URL_V0},
     parse_response,
 };
 use solana_client::client_error::{Result as ClientResult};
 
 use std::collections::HashMap;
 
-use super::helius_rust_client::API_URL_V1;
+use super::init::API_URL_V1;
 
 impl HeliusClient {
     /// Returns the native balance and token balances for a given address. GET request to `https://api.helius.xyz/v0/addresses/{address}/balances`.

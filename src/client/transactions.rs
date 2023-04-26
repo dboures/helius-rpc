@@ -1,5 +1,5 @@
 use super::{
-    helius_rust_client::{HeliusClient, API_URL_V0},
+    init::{HeliusClient, API_URL_V0},
     parse_response,
 };
 use solana_client::client_error::Result as ClientResult;
@@ -8,7 +8,7 @@ use solana_sdk::commitment_config::CommitmentLevel;
 use std::collections::HashMap;
 
 use crate::{
-    helius_rust_client::api_commitment_error,
+    client::api_commitment_error,
     models::{
         enriched_transaction::{EnrichedTransaction, RequestConfig},
         raw_transaction::{GetRawTransactionsRequestConfig, RawTransaction},
