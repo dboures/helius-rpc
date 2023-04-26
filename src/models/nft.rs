@@ -141,6 +141,7 @@ pub struct TokenBalance {
     pub decimals: u8,
 }
 
+/// Request parameters for the `https://api.helius.xyz/v1/mintlist` endpoint. The API only accepts one of verified_collection_addresses or first_verified_creators, not both.
 #[derive(Debug, Default)]
 pub struct MintListRequestConfig {
     pub verified_collection_addresses: Option<Vec<String>>,
@@ -195,6 +196,7 @@ pub struct ListingResult {
     pub active_listings: Vec<ActiveListing>,
 }
 
+/// Request parameters for the `https://api.helius.xyz/v1/active-listings` endpoint. The API only accepts one of verified_collection_addresses or first_verified_creators, not both.
 #[derive(Debug, Default)]
 pub struct ActiveListingsRequestConfig {
     pub marketplaces: Vec<String>,

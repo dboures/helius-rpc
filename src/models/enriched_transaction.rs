@@ -1,9 +1,8 @@
-use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde::{Deserialize};
 use solana_client::client_error::{ClientError, ClientErrorKind, Result as ClientResult};
 use solana_program::{clock::UnixTimestamp, pubkey::Pubkey, slot_history::Slot};
 use solana_sdk::{
-    commitment_config::CommitmentLevel, signature::Signature, transaction::TransactionError,
+    commitment_config::CommitmentLevel, signature::Signature,
 };
 
 use super::{

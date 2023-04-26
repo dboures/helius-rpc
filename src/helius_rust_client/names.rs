@@ -12,8 +12,8 @@ struct DomainNamesResponse {
 }
 
 impl HeliusClient {
-    /// Returns the Solana Naming Service name for a given address. Calls `https://api.helius.xyz/v0/addresses/{address}/names`.
-    /// * `address` - The addresses that you want names for.
+    /// Returns the Solana Naming Service name for a given address. GET request to `https://api.helius.xyz/v0/addresses/{address}/names`.
+    /// * `address` - The address that you want names for.
     pub async fn get_naming_service_names(&self, address: String) -> ClientResult<Vec<String>> {
         let request_url = format!(
             "{}/addresses/{}/names?api-key={}",

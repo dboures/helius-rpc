@@ -11,29 +11,15 @@ use super::{
     helius_rust_client::{HeliusClient, API_URL_V0},
     parse_response,
 };
-use reqwest::Client;
-use serde::Deserialize;
-use solana_client::client_error::{ClientError, ClientErrorKind, Result as ClientResult};
-use solana_program::{clock::UnixTimestamp, slot_history::Slot};
-use solana_sdk::commitment_config::CommitmentLevel;
-use solana_transaction_status::{UiTransaction, UiTransactionStatusMeta};
+use solana_client::client_error::{Result as ClientResult};
 
 use std::collections::HashMap;
 
 use super::helius_rust_client::API_URL_V1;
 
-#[derive(Clone, Debug, PartialEq, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct HeliusTxn {
-    pub slot: Slot,
-    pub block_time: Option<UnixTimestamp>,
-    pub transaction: UiTransaction,
-    pub meta: Option<UiTransactionStatusMeta>,
-}
-
 impl HeliusClient {
-    /// Returns the native balance and token balances for a given address. Calls `https://api.helius.xyz/v0/addresses/{address}/balances`.
-    /// * `address` - The addresses that you want token balances for.
+    /// Returns the native balance and token balances for a given address. GET request to `https://api.helius.xyz/v0/addresses/{address}/balances`.
+    /// * `address` - The address that you want token balances for.
     pub async fn get_token_balances(&self, address: String) -> ClientResult<TokenBalancesResponse> {
         let request_url = format!(
             "{}/addresses/{}/balances?api-key={}",
@@ -51,8 +37,8 @@ impl HeliusClient {
         parse_response(response).await
     }
 
-    /// Returns the NFTs held for a given address. Calls `https://api.helius.xyz/v0/addresses/{address}/nfts`.
-    /// * `address` - The addresses that you want nfts for.
+    /// Returns the NFTs held for a given address. GET request to `https://api.helius.xyz/v0/addresses/{address}/nfts`.
+    /// * `address` - The address that you want nfts for.
     pub async fn get_nfts(
         &self,
         address: String,
@@ -78,7 +64,7 @@ impl HeliusClient {
         parse_response(response).await
     }
 
-    /// Returns NFT metadata for the given token mint addresses. Calls `https://api.helius.xyz/v1/nfts`.
+    /// Returns NFT metadata for the given token mint addresses. POST request to `https://api.helius.xyz/v1/nfts`.
     /// * `token_mints` - The nft mint addresses that you want metadata for.
     pub async fn get_nfts_metadata(
         &self,
@@ -100,29 +86,27 @@ impl HeliusClient {
         parse_response(response).await
     }
 
-    // /// Returns all NFT related events associated with the given address. POST request to `https://api.helius.xyz/v1/nft-events`.
-    // /// * `config` - The [`RequestConfig`](crate::models::enriched_transaction::RequestConfig).
-    // pub async fn get_nft_events_for_address(&self, config: RequestConfig) -> ClientResult<Vec<NftEvent>> {
-    //     let query = config.generate_query_parameters(self.api_key.clone())?;
-    //     let request_url = format!(
-    //         "{}/addresses/{}/nft-events?",
-    //         API_URL_V0,
-    //         config.address.to_string(),
-    //     );
+    /// Returns all NFT related events associated with the given address. POST request to `https://api.helius.xyz/v1/nft-events`.
+    /// * `config` - The [`RequestConfig`](crate::models::enriched_transaction::RequestConfig).
+    pub async fn get_nft_events_for_address(&self, config: RequestConfig) -> ClientResult<Vec<NftEvent>> {
+        let query = config.generate_query_parameters(self.api_key.clone())?;
+        let request_url = format!(
+            "{}/addresses/{}/nft-events?",
+            API_URL_V0,
+            config.address.to_string(),
+        );
 
-    //     let res: Vec<NftEvent> = self
-    //         .http_client
-    //         .get(request_url)
-    //         .query(&query)
-    //         .send()
-    //         .await?
-    //         .json()
-    //         .await?;
+        let response = self
+            .http_client
+            .get(request_url)
+            .query(&query)
+            .send()
+            .await;
 
-    //     Ok(res)
-    // }
+        parse_response(response).await
+    }
 
-    /// Returns all NFT related events associated with the given address. Calls `https://api.helius.xyz/v1/addresses/{address}/nft-events`.
+    /// Returns all NFT related events associated with the given address. GET request to `https://api.helius.xyz/v1/addresses/{address}/nft-events`.
     /// * `config` - The [`RequestConfig`](crate::models::enriched_transaction::RequestConfig).
     pub async fn get_nft_events(&self, config: RequestConfig) -> ClientResult<Vec<NftEvent>> {
         let query = config.generate_query_parameters(self.api_key.clone())?;
@@ -179,7 +163,7 @@ impl HeliusClient {
         parse_response(response).await
     }
 
-    /// Returns token metadata (whether NFT or Fungible) for the given token mint addresses. Calls `https://api.helius.xyz/v0/tokens/metadata`.
+    /// Returns token metadata (whether NFT or Fungible) for the given token mint addresses. POST request to `https://api.helius.xyz/v0/tokens/metadata`.
     /// * `token_mints` - The token mint addresses that you want metadata for.
     pub async fn get_tokens_metadata(
         &self,

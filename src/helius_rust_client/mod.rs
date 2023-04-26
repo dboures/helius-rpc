@@ -13,7 +13,7 @@ pub async fn parse_response<T: for<'a> Deserialize<'a>>(
 ) -> ClientResult<T> {
     match response {
         Ok(res) => {
-            let payload = res.json().await; // could be `Error` or `Response` but only parses to `Response`
+            let payload = res.json().await;
             match payload {
                 Ok(j) => Ok(j),
                 Err(e) => Err(ClientError::from(ClientErrorKind::Reqwest(e))),
